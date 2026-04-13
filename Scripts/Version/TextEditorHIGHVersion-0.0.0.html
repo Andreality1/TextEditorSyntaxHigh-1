@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeView Pro - Monokai Noir</title>
+    <link href="prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            /* Monokai Noir Palette */
+            --bg-dark: #000000;
+            --header-bg: #0a0a0a;
+            --border-color: #1e1e1e;
+            --gutter-bg: #000000;
+            --gutter-text: #75715e;
+            --accent: #a6e22e; /* Monokai Green */
+            --secondary: #66d9ef; /* Monokai Blue */
+            --text-main: #f8f8f2;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-open {
+            background-color: var(--secondary);
+            color: #000;
+        }
+
+        .btn-download {
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pane-left {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .pane-title {
+            background: #0a0a0a;
+            padding: 5px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #75715e;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gutter, textarea, pre[class*="language-"] {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            padding-top: 20px !important;
+            padding-bottom: 20px !important;
+            box-sizing: border-box;
+        }
+
+        .gutter {
+            width: 55px;
+            background-color: var(--gutter-bg);
+            color: var(--gutter-text);
+            text-align: right;
+            padding-right: 15px !important;
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+            white-space: pre;
+        }
+
+        textarea {
+            flex: 1;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            border: none;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+            white-space: pre;
+            overflow: auto;
+            caret-color: #f8f8f0;
+        }
+
+        .preview-area {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-dark);
+        }
+
+        pre[class*="language-"] {
+            margin: 0 !important;
+            padding-left: 20px !important;
+            background: transparent !important;
+            overflow: visible !important;
+        }
+
+        /* Monokai Syntax Overrides */
+        .token.comment { color: #75715e; }
+        .token.punctuation { color: #f8f8f2; }
+        .token.property, .token.tag, .token.boolean, .token.number { color: #f92672; }
+        .token.selector, .token.attr-name, .token.string { color: #e6db74; }
+        .token.keyword { color: #66d9ef; }
+        .token.function { color: #a6e22e; }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #1e1e1e; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div><strong>CodeView Pro <span style="color: var(--accent)">●</span></strong></div>
+    <div class="controls">
+        <button class="btn btn-open" onclick="readFile()">Open File</button>
+        <button class="btn btn-download" onclick="downloadFile()">Save As...</button>
+    </div>
+</header>
+
+<div class="main-container">
+    <div class="pane pane-left">
+        <div class="pane-title">Editor</div>
+        <div class="editor-container">
+            <div id="left-gutter" class="gutter">1</div>
+            <textarea id="editor" spellcheck="false"></textarea>
+        </div>
+    </div>
+
+    <div class="pane">
+        <div class="pane-title">Highlighted View</div>
+        <div class="preview-area" id="preview-area">
+            <pre id="preview-pre" class="language-javascript"><code id="preview-code"></code></pre>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
+<script>
+    const editor = document.getElementById('editor');
+    const previewCode = document.getElementById('preview-code');
+    const previewArea = document.getElementById('preview-area');
+    const leftGutter = document.getElementById('left-gutter');
+
+    function update() {
+        const text = editor.value;
+        const lines = text.split('\n');
+        const lineCount = lines.length;
+        let gutterContent = '';
+        for (let i = 1; i <= lineCount; i++) {
+            gutterContent += i + '\n';
+        }
+        leftGutter.textContent = gutterContent;
+        previewCode.textContent = text;
+        Prism.highlightElement(previewCode);
+        syncScroll();
+    }
+
+    function syncScroll() {
+        const scrollTop = editor.scrollTop;
+        const scrollLeft = editor.scrollLeft;
+        leftGutter.scrollTop = scrollTop;
+        previewArea.scrollTop = scrollTop;
+        previewArea.scrollLeft = scrollLeft;
+    }
+
+    function handleTab(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + 4;
+            update();
+        }
+    }
+
+    // Read File Implementation
+    function readFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.js,.html,.css,.json';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = event => {
+                editor.value = event.target.result;
+                update();
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // Enhanced "Save As" Implementation
+    async function downloadFile() {
+        const text = editor.value;
+
+        // Use File System Access API if available (Chrome, Edge, Brave)
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'script.js',
+                    types: [{
+                        description: 'Code Files',
+                        accept: { 'text/plain': ['.js', '.html', '.css', '.txt', '.json'] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(text);
+                await writable.close();
+            } catch (err) {
+                console.log('Save As cancelled or failed:', err);
+            }
+        } else {
+            // Fallback for Firefox and Safari
+            const blob = new Blob([text], { type: 'text/plain' });
+            const anchor = document.createElement('a');
+            anchor.download = 'code_export.txt';
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.target = '_blank';
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        }
+    }
+
+    editor.addEventListener('input', update);
+    editor.addEventListener('keydown', handleTab);
+    editor.addEventListener('scroll', syncScroll);
+
+    // Initial Content
+    editor.value = `// Monokai Noir Edition\nfunction saveAsDemo() {\n    console.log("Click 'Save As' to choose your folder!");\n}\n\nsaveAsDemo();`;
+    update();
+</script>
+
+</body>
+</html>

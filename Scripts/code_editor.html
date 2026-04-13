@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --button-hover: #1f6feb;
+            --editor-bg: #161b22;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            padding: 1rem 2rem;
+            background-color: var(--editor-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .editor-container {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background-color: var(--editor-bg);
+            color: #d1d5db;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">Code Text Editor</div>
+        <div class="controls">
+            <button id="downloadBtn">Download .txt</button>
+        </div>
+    </header>
+
+    <div class="editor-container">
+        <textarea id="codeEditor" placeholder="Start typing your code here..."></textarea>
+    </div>
+
+    <script>
+        const editor = document.getElementById('codeEditor');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Handle Tab key
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+
+                // set textarea value to: text before caret + tab + text after caret
+                editor.value = editor.value.substring(0, start) +
+                    "    " + editor.value.substring(end);
+
+                // put caret at right position again
+                editor.selectionStart = editor.selectionEnd = start + 4;
+            }
+        });
+
+        // Download functionality
+        downloadBtn.addEventListener('click', () => {
+            const text = editor.value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = 'code_export.txt';
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Side-by-Side HTML Editor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        body { 
+            background: #1e1e1e; 
+            color: #fff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header { padding: 10px 20px; background: #252526; border-bottom: 1px solid #333; }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Shared styling for both panes */
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+        }
+
+        #editing {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border: none;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        #highlighting-container {
+            flex: 1;
+            margin: 0;
+            background: #1e1e1e;
+            overflow: auto;
+        }
+
+        code[class*="language-"] {
+            font-family: 'Fira Code', 'Courier New', monospace !important;
+            font-size: 14px !important;
+        }
+
+        .label {
+            background: #333;
+            padding: 5px 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <header>Visual HTML Editor</header>
+    
+    <div class="container">
+        <div class="pane">
+            <div class="label">Input</div>
+            <textarea id="editing" spellcheck="false" placeholder="Enter HTML here..."></textarea>
+        </div>
+
+        <div class="pane">
+            <div class="label">Syntax Highlighted</div>
+            <pre id="highlighting-container" class="language-html"><code id="highlighting-content"></code></pre>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+
+    <script>
+        const textarea = document.querySelector("#editing");
+        const codeContent = document.querySelector("#highlighting-content");
+
+        function update() {
+            let text = textarea.value;
+            // Escape HTML tags so they display as text rather than rendering
+            codeContent.textContent = text;
+            // Apply Prism highlighting
+            Prism.highlightElement(codeContent);
+        }
+
+        // Handle typing
+        textarea.addEventListener('input', update);
+
+        // Handle Tab key
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                // Set textarea value to: text before caret + tab + text after caret
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+
+                // Put caret in right place
+                this.selectionStart = this.selectionEnd = start + 4;
+                update();
+            }
+        });
+
+        // Initial content
+        textarea.value = `<!DOCTYPE html>\n<html>\n  <body>\n    <h1>Hello World</h1>\n    <p>This is side-by-side highlighting.</p>\n  </body>\n</html>`;
+        update();
+    </script>
+</body>
+</html>

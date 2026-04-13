@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split-Screen Syntax Editor</title>
+    <!-- Load Prism.js for high-quality syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #1e1e1e;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #252526;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Input Pane (Left) */
+        .pane-left {
+            flex: 1;
+            border-right: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+
+        /* Preview Pane (Right) */
+        .pane-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1d1d1d;
+            overflow: auto;
+        }
+
+        .pane-title {
+            background: #2d2d2d;
+            padding: 5px 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+
+        /* Prism override for split screen */
+        pre[class*="language-"] {
+            margin: 0 !important;
+            padding: 20px !important;
+            height: 100%;
+            background: transparent !important;
+            border-radius: 0 !important;
+        }
+
+        code[class*="language-"] {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div><strong>Live Syntax Editor</strong></div>
+    <div style="font-size: 12px; color: #888;">Powered by Prism.js</div>
+</header>
+
+<div class="main-container">
+    <!-- LEFT SIDE: EDITABLE AREA -->
+    <div class="pane-left">
+        <div class="pane-title">Input Editor</div>
+        <textarea id="editor" spellcheck="false" placeholder="Type HTML, CSS, or JS here..."></textarea>
+    </div>
+
+    <!-- RIGHT SIDE: HIGHLIGHTED VIEW -->
+    <div class="pane-right">
+        <div class="pane-title">Syntax Preview</div>
+        <pre id="preview-pre" class="language-html"><code id="preview-code" class="language-html"></code></pre>
+    </div>
+</div>
+
+<!-- Load Prism.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<!-- Components for CSS and JS support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+
+<script>
+    const editor = document.getElementById('editor');
+    const previewCode = document.getElementById('preview-code');
+    const previewPre = document.getElementById('preview-pre');
+
+    function updatePreview() {
+        const code = editor.value;
+        
+        // Update content
+        previewCode.textContent = code;
+        
+        // Trigger Prism to re-highlight
+        Prism.highlightElement(previewCode);
+    }
+
+    // Event listener for input
+    editor.addEventListener('input', updatePreview);
+
+    // Tab key handling
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 4;
+            updatePreview();
+        }
+    });
+
+    // Default code
+    editor.value = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .box {
+            color: #569cd6;
+            background: #1e1e1e;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">Hello World</div>
+
+    <script>
+        function greet() {
+            console.log("Welcome to the split-screen editor!");
+        }
+        greet();
+    <\/script>
+</body>
+</html>`;
+
+    // Initial highlight
+    updatePreview();
+</script>
+
+</body>
+</html>

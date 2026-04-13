@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple HTML Syntax Editor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        body { background: #2d2d2d; font-family: sans-serif; color: white; padding: 20px; }
+        
+        .editor-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #444;
+        }
+
+        /* Both elements must have identical typography to align perfectly */
+        #editing, #highlighting {
+            margin: 0;
+            padding: 10px;
+            border: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 14pt;
+            line-height: 1.5;
+            white-space: pre;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        #editing {
+            z-index: 1;
+            white-space: pre;
+            color: transparent;
+            background: transparent;
+            caret-color: white; /* Make the cursor visible */
+            resize: none;
+        }
+
+        #highlighting {
+            z-index: 0;
+        }
+
+        /* Prism override to remove default styling that breaks alignment */
+        code[class*="language-"], pre[class*="language-"] {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>HTML Syntax Editor</h2>
+    
+    <div class="editor-container">
+        <textarea id="editing" spellcheck="false" oninput="update(this.value); sync_scroll(this);" onscroll="sync_scroll(this);"></textarea>
+        <pre id="highlighting" aria-hidden="true">
+            <code class="language-html" id="highlighting-content"></code>
+        </pre>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+
+    <script>
+        const result_element = document.querySelector("#highlighting-content");
+        const editing_element = document.querySelector("#editing");
+
+        function update(text) {
+            // Handle the HTML entities so tags don't actually render
+            let result_code = text.replace(new RegExp("&", "g"), "&amp;").replace(new RegExp("<", "g"), "&lt;");
+            
+            // Update the code element
+            result_element.innerHTML = result_code;
+            
+            // Tell Prism to highlight the new content
+            Prism.highlightElement(result_element);
+        }
+
+        function sync_scroll(element) {
+            let result_element = document.querySelector("#highlighting");
+            // Sync the scroll position of the highlight layer with the textarea
+            result_element.scrollTop = element.scrollTop;
+            result_element.scrollLeft = element.scrollLeft;
+        }
+
+        // Initialize with a template
+        editing_element.value = "<h1>Hello World</h1>\n<p>Start typing HTML...</p>";
+        update(editing_element.value);
+    </script>
+</body>
+</html>

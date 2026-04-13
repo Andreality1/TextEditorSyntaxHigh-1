@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markup Code Editor</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #d1d5db;
+            --accent-color: #58a6ff;
+            --gutter-bg: #000000;
+            --gutter-text: #6e7681;
+            /* Syntax Colors */
+            --syntax-tag: #7ee787;      /* Green for tags */
+            --syntax-attr: #79c0ff;     /* Blue for attributes */
+            --syntax-string: #a5d6ff;   /* Light blue for strings */
+            --syntax-comment: #8b949e;  /* Gray for comments */
+            --syntax-bracket: #ff7b72;  /* Red/Orange for brackets */
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 0.8rem 2rem;
+            background-color: #0d1117;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+            z-index: 100;
+        }
+
+        .title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background-color: #2ea043;
+        }
+
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #lineNumbers {
+            width: 50px;
+            background-color: var(--gutter-bg);
+            color: var(--gutter-text);
+            text-align: right;
+            padding: 20px 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid #30363d;
+            white-space: pre;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        #highlighting, #editing {
+            margin: 0;
+            padding: 20px;
+            border: 0;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: inherit;
+            white-space: pre;
+            box-sizing: border-box;
+            tab-size: 4;
+            overflow: hidden;
+        }
+
+        #editing {
+            background: transparent;
+            color: transparent;
+            caret-color: white;
+            resize: none;
+            outline: none;
+            z-index: 1;
+        }
+
+        #highlighting {
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Syntax Highlighting Styles */
+        .token.tag { color: var(--syntax-bracket); }
+        .token.tag-name { color: var(--syntax-tag); }
+        .token.attr-name { color: var(--syntax-attr); }
+        .token.attr-value { color: var(--syntax-string); }
+        .token.comment { color: var(--syntax-comment); font-style: italic; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="title">Markup Editor (Black)</div>
+    <div class="controls">
+        <button id="downloadBtn">Download .html</button>
+    </div>
+</header>
+
+<div class="main-container">
+    <div id="lineNumbers">1</div>
+    <div class="editor-wrapper">
+        <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+        <textarea id="editing" spellcheck="false" placeholder="Enter HTML/Markup here..."></textarea>
+    </div>
+</div>
+
+<script>
+    const editing = document.querySelector("#editing");
+    const highlightingContent = document.querySelector("#highlighting-content");
+    const lineNumbers = document.querySelector("#lineNumbers");
+
+    function update(text) {
+        // 1. Update line numbers
+        const lines = text.split('\n');
+        lineNumbers.textContent = Array.from({length: lines.length}, (_, i) => i + 1).join('\n');
+
+        // 2. Simple Markup Syntax Highlighting
+        let result = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        // Comments
+        result = result.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="token comment">$1</span>');
+
+        // Tags and Brackets
+        // This regex finds <tag, </tag, and > and styles them
+        result = result.replace(/(&lt;\/?)([a-zA-Z0-9]+)/g, '<span class="token tag">$1</span><span class="token tag-name">$2</span>');
+        result = result.replace(/(&gt;)/g, '<span class="token tag">$1</span>');
+
+        // Attributes (name="value")
+        result = result.replace(/([\w-]+)=(["'][\s\S]*?["'])/g, '<span class="token attr-name">$1</span>=<span class="token attr-value">$2</span>');
+
+        highlightingContent.innerHTML = result;
+    }
+
+    function syncScroll() {
+        const highlighting = document.querySelector("#highlighting");
+        highlighting.scrollTop = editing.scrollTop;
+        highlighting.scrollLeft = editing.scrollLeft;
+        lineNumbers.scrollTop = editing.scrollTop;
+    }
+
+    editing.addEventListener("input", () => {
+        update(editing.value);
+        syncScroll();
+    });
+
+    editing.addEventListener("scroll", syncScroll);
+
+    editing.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+            e.preventDefault();
+            const start = editing.selectionStart;
+            const end = editing.selectionEnd;
+            editing.value = editing.value.substring(0, start) + "    " + editing.value.substring(end);
+            editing.selectionStart = editing.selectionEnd = start + 4;
+            update(editing.value);
+        }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        const blob = new Blob([editing.value], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Initial update
+    update("");
+</script>
+
+</body>
+</html>

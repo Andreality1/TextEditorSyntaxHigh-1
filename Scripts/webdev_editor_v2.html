@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebDev Syntax Editor v2</title>
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --font: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 15px 25px;
+            background: #252526;
+            border-bottom: 1px solid #333;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            flex-grow: 1;
+            margin: 20px;
+            background: var(--bg);
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #editing, #highlighting {
+            margin: 0;
+            padding: 20px;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: var(--font);
+            font-size: 16px;
+            line-height: 1.5;
+            tab-size: 4;
+            box-sizing: border-box;
+            white-space: pre;
+            overflow: auto;
+            border: none;
+            outline: none;
+        }
+
+        #editing {
+            z-index: 1;
+            background: transparent;
+            color: #d4d4d4; /* Text is now visible to ensure no 'missing text' issues */
+            caret-color: #fff;
+            resize: none;
+            /* We use a slight trick: the text in the textarea is semi-transparent 
+               so the background colors can still be seen slightly, or we just 
+               set it to full color and use the highlighter for 'under-glow'. 
+               To ensure visibility, let's keep it visible and use the highlighter
+               to just color the keywords. */
+            -webkit-text-fill-color: transparent; 
+        }
+
+        #highlighting {
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Syntax Highlight Styles */
+        .token-keyword { color: #569cd6; font-weight: bold; }
+        .token-string { color: #ce9178; }
+        .token-comment { color: #6a9955; }
+        .token-tag { color: #569cd6; }
+        .token-attr { color: #9cdcfe; }
+        .token-function { color: #dcdcaa; }
+
+        .instruction {
+            padding: 10px 25px;
+            font-size: 12px;
+            color: #888;
+            background: #1e1e1e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <strong>WebDev Editor</strong>
+</div>
+
+<div class="editor-wrapper">
+    <textarea id="editing" spellcheck="false" oninput="update(); syncScroll();" onscroll="syncScroll();" onkeydown="handleTab(event);"></textarea>
+    <pre id="highlighting" aria-hidden="true"><code id="highlight-content"></code></pre>
+</div>
+
+<div class="instruction">
+    Tip: Text is visible and editable. Highlighting is applied dynamically underneath.
+</div>
+
+<script>
+    const editing = document.getElementById('editing');
+    const content = document.getElementById('highlight-content');
+    const highlightArea = document.getElementById('highlighting');
+
+    function update() {
+        let text = editing.value;
+
+        // Escape HTML
+        let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Highlighting Logic
+        html = html.replace(/\/\/(.*)/g, '<span class="token-comment">//$1</span>'); // Comments
+        html = html.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="token-string">$1</span>'); // Strings
+        html = html.replace(/\b(let|const|var|function|return|if|else|for|while|class|export|import|async|await)\b/g, '<span class="token-keyword">$1</span>'); // Keywords
+        html = html.replace(/(&lt;[\/!]?[a-zA-Z1-6]+)/g, '<span class="token-tag">$1</span>'); // Tags
+        html = html.replace(/\s([a-z-]+)(?==)/gi, ' <span class="token-attr">$1</span>'); // Attributes
+        html = html.replace(/\b([a-zA-Z0-9_]+)(?=\()/g, '<span class="token-function">$1</span>'); // Functions
+
+        content.innerHTML = html;
+    }
+
+    function syncScroll() {
+        highlightArea.scrollTop = editing.scrollTop;
+        highlightArea.scrollLeft = editing.scrollLeft;
+    }
+
+    function handleTab(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = editing.selectionStart;
+            const end = editing.selectionEnd;
+            editing.value = editing.value.substring(0, start) + "    " + editing.value.substring(end);
+            editing.selectionStart = editing.selectionEnd = start + 4;
+            update();
+        }
+    }
+
+    // Default Code
+    editing.value = `<!-- Welcome -->
+<div class="container">
+    <h1>Hello World</h1>
+</div>
+
+<script>
+function start() {
+    let message = "Editor is ready!";
+    console.log(message);
+}
+start();
+<\/script>`;
+
+    update();
+</script>
+
+</body>
+</html>

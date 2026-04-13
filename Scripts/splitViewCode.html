@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Code Editor - Split View</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --button-hover: #1f6feb;
+            --editor-bg: #000000;
+            --gutter-bg: #0a0a0a;
+            --gutter-text: #6e7681;
+            --border-color: #30363d;
+            
+            /* Syntax Colors */
+            --syntax-keyword: #ff7b72;
+            --syntax-string: #a5d6ff;
+            --syntax-comment: #8b949e;
+            --syntax-func: #d2a8ff;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 0.8rem 2rem;
+            background-color: #161b22;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #21262d;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* Left Side: Editor */
+        .pane {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .editor-pane {
+            border-right: 2px solid var(--border-color);
+        }
+
+        #lineNumbers {
+            width: 45px;
+            background-color: var(--gutter-bg);
+            color: var(--gutter-text);
+            text-align: right;
+            padding: 15px 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: var(--editor-bg);
+            color: #d1d5db;
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        /* Right Side: Highlighted Preview */
+        .preview-pane {
+            background-color: #0d1117;
+            padding: 15px;
+            overflow: auto;
+        }
+
+        #highlight-output {
+            margin: 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre;
+            color: #e6edf3;
+        }
+
+        /* Syntax Highlighting Classes */
+        .hljs-keyword { color: var(--syntax-keyword); font-weight: bold; }
+        .hljs-string { color: var(--syntax-string); }
+        .hljs-comment { color: var(--syntax-comment); font-style: italic; }
+        .hljs-function { color: var(--syntax-func); }
+        .hljs-tag { color: #7ee787; }
+        .hljs-attr { color: #79c0ff; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">Code Editor <span style="font-weight: normal; opacity: 0.6;">| Split View</span></div>
+        <div class="controls">
+            <button id="downloadBtn">Export .txt</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="pane editor-pane">
+            <div id="lineNumbers">1</div>
+            <textarea id="codeEditor" placeholder="Type HTML, CSS, or JS..." spellcheck="false"></textarea>
+        </div>
+
+        <div class="pane preview-pane">
+            <pre id="highlight-output"><code></code></pre>
+        </div>
+    </div>
+
+    <script>
+        const editor = document.getElementById('codeEditor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const output = document.querySelector('#highlight-output code');
+
+        // Simple Syntax Highlighter Logic
+        function highlight(text) {
+            return text
+                // Escape HTML tags to prevent rendering
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                // Highlight Strings
+                .replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '<span class="hljs-string">$&</span>')
+                // Highlight Comments
+                .replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '<span class="hljs-comment">$&</span>')
+                // Highlight Keywords (JS/CSS)
+                .replace(/\b(const|let|var|function|return|if|else|for|while|import|export|class|extends|new|try|catch|finally|this|document|window|body|style|div|span|header|footer)\b/g, '<span class="hljs-keyword">$&</span>')
+                // Highlight HTML Tags
+                .replace(/&lt;(\/?[a-z1-6]+)/gi, '&lt;<span class="hljs-tag">$1</span>')
+                .replace(/([a-z-]+)(?==)/gi, '<span class="hljs-attr">$1</span>');
+        }
+
+        const updateLineNumbers = () => {
+            const lines = editor.value.split('\n');
+            lineNumbers.textContent = lines.map((_, i) => i + 1).join('\n');
+        };
+
+        const updateAll = () => {
+            updateLineNumbers();
+            output.innerHTML = highlight(editor.value);
+        };
+
+        // Sync Scrolling
+        editor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = editor.scrollTop;
+            document.querySelector('.preview-pane').scrollTop = editor.scrollTop;
+            document.querySelector('.preview-pane').scrollLeft = editor.scrollLeft;
+        });
+
+        editor.addEventListener('input', updateAll);
+
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+                updateAll();
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const blob = new Blob([editor.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'code_export.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Initialize
+        updateAll();
+    </script>
+</body>
+</html>

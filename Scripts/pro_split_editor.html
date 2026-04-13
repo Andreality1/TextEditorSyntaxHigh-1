@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split-Screen Editor with Line Numbers</title>
+    <!-- Prism.js CSS -->
+    <link href="prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --header-bg: #252526;
+            --border-color: #3c3c3c;
+            --gutter-bg: #1e1e1e;
+            --gutter-text: #858585;
+            --accent: #007acc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .btn-download {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .btn-download:hover {
+            background-color: #0062a3;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pane-left {
+            border-right: 1px solid var(--border-color);
+        }
+
+        .pane-title {
+            background: #2d2d2d;
+            padding: 5px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Line Numbers Gutter */
+        .gutter {
+            width: 45px;
+            background-color: var(--gutter-bg);
+            color: var(--gutter-text);
+            text-align: right;
+            padding: 20px 10px 20px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        textarea {
+            flex: 1;
+            background: var(--bg-dark);
+            color: #d4d4d4;
+            border: none;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        .preview-area {
+            flex: 1;
+            display: flex;
+            overflow: auto;
+        }
+
+        pre[class*="language-"] {
+            margin: 0 !important;
+            padding: 20px !important;
+            flex: 1;
+            background: transparent !important;
+        }
+
+        code[class*="language-"] {
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div><strong>CodeView Pro</strong></div>
+    <button class="btn-download" onclick="downloadFile()">Download .txt</button>
+</header>
+
+<div class="main-container">
+    <!-- LEFT: EDITOR -->
+    <div class="pane pane-left">
+        <div class="pane-title">Editor</div>
+        <div class="editor-container">
+            <div id="left-gutter" class="gutter">1</div>
+            <textarea id="editor" spellcheck="false" onscroll="syncGutter()"></textarea>
+        </div>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="pane">
+        <div class="pane-title">Highlighted View</div>
+        <div class="preview-area">
+            <div id="right-gutter" class="gutter">1</div>
+            <pre id="preview-pre" class="language-html"><code id="preview-code"></code></pre>
+        </div>
+    </div>
+</div>
+
+<script src="prism.min.js"></script>
+<script src="prism-css.min.js"></script>
+<script src="prism-javascript.min.js"></script>
+
+
+
+<script>
+    const editor = document.getElementById('editor');
+    const previewCode = document.getElementById('preview-code');
+    const leftGutter = document.getElementById('left-gutter');
+    const rightGutter = document.getElementById('right-gutter');
+
+    function update() {
+        const text = editor.value;
+        
+        // Update Line Numbers
+        const lines = text.split('\n');
+        const lineCount = lines.length;
+        let gutterContent = '';
+        for (let i = 1; i <= lineCount; i++) {
+            gutterContent += i + '<br>';
+        }
+        leftGutter.innerHTML = gutterContent;
+        rightGutter.innerHTML = gutterContent;
+
+        // Update Highlighting
+        previewCode.textContent = text;
+        Prism.highlightElement(previewCode);
+    }
+
+    function syncGutter() {
+        leftGutter.scrollTop = editor.scrollTop;
+    }
+
+    function handleTab(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + 4;
+            update();
+        }
+    }
+
+    function downloadFile() {
+        const text = editor.value;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const anchor = document.createElement('a');
+        anchor.download = 'code_export.txt';
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.target = '_blank';
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    }
+
+    editor.addEventListener('input', update);
+    editor.addEventListener('keydown', handleTab);
+
+    // Default code
+    editor.value = `<!-- HTML -->
+<div class="welcome">
+    <h1>Hello World</h1>
+</div>
+
+<style>
+/* CSS */
+.welcome {
+    color: skyblue;
+}
+</style>
+
+<script>
+// JS
+function greet() {
+    console.log("Editor with line numbers and download!");
+}
+greet();
+<\/script>`;
+
+    update();
+</script>
+
+</body>
+</html>
